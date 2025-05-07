@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Frontend",
-    "slug": "Frontend",
+    "name": "FlushAlert",
+    "slug": "FlushAlert",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "FlushAlert",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
