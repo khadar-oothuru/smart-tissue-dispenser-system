@@ -1,68 +1,92 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AsyncStorage, View } from 'react-native'; // For storing JWT tokens
+import { Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@react-navigation/elements';
+
+// Platform-specific storage handlers
+let Storage;
+if (Platform.OS === 'web') {
+  Storage = {
+    getItem: async (key) => localStorage.getItem(key),
+    setItem: async (key, value) => localStorage.setItem(key, value),
+    removeItem: async (key) => localStorage.removeItem(key),
+  };
+} else {
+  // For Android/iOS
+  import('@react-native-async-storage/async-storage').then((module) => {
+    Storage = module.default;
+  });
+}
 
 // Create the AuthContext
 const AuthContext = createContext(null);
 
 // AuthProvider Component
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // Store user details
-  const [accessToken, setAccessToken] = useState(null); // Store access token
-  const [refreshToken, setRefreshToken] = useState(null); // Store refresh token
-  const [loading, setLoading] = useState(true); // Loading state
+  const [user, setUser] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+  const [refreshToken, setRefreshToken] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
 
   useEffect(() => {
-    // Fetch auth details from AsyncStorage
     const fetchAuthDetails = async () => {
-      const storedAccessToken = await AsyncStorage.getItem('accessToken');
-      const storedRefreshToken = await AsyncStorage.getItem('refreshToken');
-      const storedUser = await AsyncStorage.getItem('user');
+      try {
+        // Wait for storage to be ready (only relevant in Native because of dynamic import)
+        if (!Storage) return;
 
-      if (storedAccessToken && storedUser) {
-        setAccessToken(storedAccessToken);
-        setRefreshToken(storedRefreshToken);
-        setUser(JSON.parse(storedUser));
+        const storedAccessToken = await Storage.getItem('accessToken');
+        const storedRefreshToken = await Storage.getItem('refreshToken');
+        const storedUser = await Storage.getItem('user');
+
+        if (storedAccessToken && storedUser) {
+          setAccessToken(storedAccessToken);
+          setRefreshToken(storedRefreshToken);
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.error('Error fetching auth details:', error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false); // Set loading to false after fetching auth details
     };
 
     fetchAuthDetails();
-  }, []);
+  }, [Storage]);
 
-  // Handle login
   const login = async (access, refresh, user) => {
-    setAccessToken(access);
-    setRefreshToken(refresh);
-    setUser(user);
+    try {
+      await Storage.setItem('accessToken', access);
+      await Storage.setItem('refreshToken', refresh);
+      await Storage.setItem('user', JSON.stringify(user));
 
-    // Store tokens and user info for persistence
-    await AsyncStorage.setItem('accessToken', access);
-    await AsyncStorage.setItem('refreshToken', refresh);
-    await AsyncStorage.setItem('user', JSON.stringify(user));
+      setAccessToken(access);
+      setRefreshToken(refresh);
+      setUser(user);
 
-    router.replace('Home'); // Redirect to Home after login
+      router.replace('Home');
+    } catch (error) {
+      console.error('Login error:', error);
+    }
   };
 
-  // Handle logout
   const logout = async () => {
-    setAccessToken(null);
-    setRefreshToken(null);
-    setUser(null);
+    try {
+      await Storage.removeItem('accessToken');
+      await Storage.removeItem('refreshToken');
+      await Storage.removeItem('user');
 
-    // Clear stored tokens and user info
-    await AsyncStorage.removeItem('accessToken');
-    await AsyncStorage.removeItem('refreshToken');
-    await AsyncStorage.removeItem('user');
+      setAccessToken(null);
+      setRefreshToken(null);
+      setUser(null);
 
-    router.replace('Login'); // Redirect to Login after logout
+      router.replace('Login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
-  // If data is still loading, render a loading state
   if (loading) {
     return <LoadingComponent />;
   }
@@ -74,7 +98,6 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook to access AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -83,7 +106,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Example Loading Component for React Native
 const LoadingComponent = () => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
     <Text>Loading...</Text>

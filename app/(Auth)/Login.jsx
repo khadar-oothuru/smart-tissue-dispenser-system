@@ -26,7 +26,7 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       // Send a POST request to your Django backend to get JWT tokens
-      const response = await axios.post("https://your-django-api.com/api/token/", {
+      const response = await axios.post("http://10.0.53.177:8000/api/auth/login/", {
         email,
         password,
       });
@@ -34,7 +34,7 @@ export default function Login() {
       const { access, refresh } = response.data;
 
       // Fetch user details to check role
-      const userResponse = await axios.get("https://your-django-api.com/api/user/", {
+      const userResponse = await axios.get("http://10.0.53.177:8000/api/auth/user/", {
         headers: { Authorization: `Bearer ${access}` },
       });
 

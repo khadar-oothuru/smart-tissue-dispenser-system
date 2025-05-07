@@ -1,23 +1,31 @@
-import { Stack } from 'expo-router';
-import { useAuth } from "../context/AuthContext"
+import { Stack } from "expo-router";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 
-export default function Layout() {
+function Layout() {
   const { user } = useAuth();
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       {user ? (
-        user.role === 'admin' ? (
-          <Stack.Screen name="AdminDashboard" />
+        user.role === "admin" ? (
+          <Stack.Screen name="(Admin)" />
         ) : (
           <Stack.Screen name="(tabs)" />
         )
       ) : (
         <>
-          <Stack.Screen name="login" />
-          <Stack.Screen name="register" />
+          <Stack.Screen name="Login" />
+          <Stack.Screen name="SignUp" />
         </>
       )}
     </Stack>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <Layout />
+    </AuthProvider>
   );
 }
