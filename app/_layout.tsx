@@ -1,29 +1,72 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+
+
+
+import { Stack } from "expo-router";
+import { AuthProvider, useAuth } from "../context/AuthContext";
+import { View, ActivityIndicator } from "react-native";
+import React, { useEffect } from "react";
+import { ThemeProvider, useThemeContext } from "../context/ThemeContext";
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+function Layout() {
+  const { user, loading } = useAuth();
+  const { themeColors } = useThemeContext();
+  const { background, text } = themeColors;
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  useEffect(() => {}, [background]);
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: background,
+        }}
+      >
+        <ActivityIndicator size="large" color={text} />
+      </View>
+    );
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
+    <>
+      <StatusBar
+        style={background === "#090b0a" ? "light" : "dark"} // Set status bar color dynamically
+      />
+      <View style={{ flex: 1, backgroundColor: background }}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <Stack screenOptions={{ headerShown: false }}>
+            {user ? (
+              user.role === "admin" ? (
+                <Stack.Screen name="(Admintab)" />
+              ) : (
+                <Stack.Screen name="(drawer)" />
+              )
+            ) : (
+              <>
+                <Stack.Screen name="Login" />
+                <Stack.Screen name="SignUp" />
+              </>
+            )}
+          </Stack>
+        </SafeAreaView>
+      </View>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <Layout />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
+
+
+
